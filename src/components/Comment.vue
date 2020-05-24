@@ -1,32 +1,37 @@
 <template>
   <div class="container">
-      <!-- 用户列表 -->
-      <div class="user-list">
-        <div class="header">
-          <div class="avatar">
-            <img class="img avatar_url" :src="avatar" alt="" />
-          </div>
-          <div class="info">
-            <!--  -->
-            <h3 class="username">{{userName}}</h3>
-          </div>
+    <!-- 用户列表 -->
+    <div class="user-list">
+      <div class="header">
+        <div class="avatar">
+          <img class="img avatar_url" :src="avatar" alt="" />
         </div>
-        <div class="title"><h3>用户列表</h3></div>
-        <ul>
-          <li class="user" v-for="item in userlist" :key="item.userName" >
-            <span class="avatar"><img :src="item.avatar" alt="" /></span>
-            <span class="name">{{item.userName}}</span>
-          </li>  
-        </ul>
+        <div class="info">
+          <!--  -->
+          <h3 class="username">{{ userName }}</h3>
+        </div>
       </div>
-      <!-- 聊天主窗口 -->
-      <div class="box">
-        <!-- 聊天窗口头部 -->
-        <div class="box-hd"><h3>聊天室(<span id="userCount">{{userlist.length}}</span>)</h3></div>
+      <div class="title"><h3>用户列表</h3></div>
+      <ul>
+        <li class="user" v-for="item in userlist" :key="item.userName">
+          <span class="avatar"><img :src="item.avatar" alt=""/></span>
+          <span class="name">{{ item.userName }}</span>
+        </li>
+      </ul>
+    </div>
+    <!-- 聊天主窗口 -->
+    <div class="box">
+      <!-- 聊天窗口头部 -->
+      <div class="box-hd">
+        <h3>
+          聊天室(<span id="userCount">{{ userlist.length }}</span
+          >)
+        </h3>
+      </div>
 
-        <!-- 聊天窗口主体区域 -->
-        <div class="box-bd" v-html="comments">
-          <!--
+      <!-- 聊天窗口主体区域 -->
+      <div class="box-bd" v-html="comments">
+        <!--
           <div class="system">
             <p class="message_system">
               <span class="content">"往事随风"邀请你和"Boy"加入了群聊</span>
@@ -54,69 +59,110 @@
             </div>
           </div>
           -->
-        </div>
-
-        <!-- 聊天窗口底部区域 -->
-        <div class="box-ft">
-          <!-- 工具栏 -->
-          <div class="toolbar">
-            <a href="javascript:;" title="表情" class="face"></a>
-            <a href="javascript:;" title="截屏" class="screen-cut">
-            </a>
-            <a href="javascript:;" title="图片" class="file">
-              <label for="file"></label>
-              <input type="file" id="file" style="display: none;">
-            </a>
-          </div>
-          <!-- 内容输入区域 -->
-          <div class="content">
-            <!-- div添加一个属性：contenteditable -->
-            <div class="text" id="content" contenteditable></div>
-          </div>
-          <!-- 发送按钮 -->
-          <div class="action">
-            <span class="desc">按下Ctrl+Enter发送</span>
-            <a class="btn-send" id="btn-send" href="javascript:;">发送</a>
-          </div>
-        </div>
       </div>
+
+      <!-- 聊天窗口底部区域 -->
+      <div class="box-ft">
+        <!-- 工具栏 -->
+        <div class="toolbar">
+          <a href="javascript:;" title="表情" class="face"></a>
+          <a href="javascript:;" title="截屏" class="screen-cut"> </a>
+          <a href="javascript:;" title="图片" class="file">
+            <label for="file"></label>
+            <input type="file" id="file" style="display: none;" />
+          </a>
+        </div>
+        <!-- 内容输入区域 -->
+        <div class="content">
+          <!-- div添加一个属性：contenteditable -->
+          <textarea class="text" id="content" v-model="message"></textarea>
+        </div>
+        <!-- 发送按钮 -->
+        <div class="action">
+          <span class="desc">按下Ctrl+Enter发送</span>
+          <a class="btn-send" id="btn-send" href="javascript:;" @click="send"
+            >发送</a
+          >
+        </div>
       </div>
     </div>
+  </div>
 </template>
 <script>
 export default {
-  data(){
+  data() {
     return {
-        userName:"",
-        avatar:"",
-        userlist:[],
-        comments:""
+      userName: "",
+      avatar: "",
+      userlist: [],
+      comments: "",
+      message: "",
     }
   },
-  mounted(){
+  mounted() {
     // 登陆成功注册的事件
     this.sockets.listener.subscribe("loginSuccess", (res) => {
-      this.userName=res.userName
-      this.avatar=res.avatar
+      this.userName = res.userName
+      this.avatar = res.avatar
     })
     this.sockets.listener.subscribe("userList", (users) => {
-      this.userlist=users
+      this.userlist = users
     })
+    // 新用户加入群聊
     this.sockets.listener.subscribe("addUser", (user) => {
-      this.comments+= (`<div class="system">
+      this.comments += `<div class="system">
            <p class="message_system">
               <span class="content">${user.userName}加入了群聊</span>
            </p>
-        </div> `)
+        </div> `
     })
+
+    // 用户退出群聊
     this.sockets.listener.subscribe("delUser", (user) => {
-      this.comments+= (`<div class="system">
+      this.comments += `<div class="system">
            <p class="message_system">
               <span class="content">${user.userName}离开了群聊</span>
            </p>
-        </div> `)
+        </div> `
     })
-  }
+    this.sockets.listener.subscribe("sendAll", (data) => {
+      if (data.userName === this.userName) {
+        this.comments += `<div class="message-box">
+        <div class="my message">
+          <img class="avatar" src="${data.avatar}" alt="" />
+          <div class="content">
+            <div class="bubble">
+              <div class="bubble_cont">${data.message}</div>
+            </div>
+          </div>
+        </div>
+      </div> `
+      } else {
+        this.comments += `<div class="message-box">
+        <div class="other message">
+          <img class="avatar" src="${data.avatar}" alt="" />
+          <div class="content">
+            <div class="nickname">${data.userName}</div>
+            <div class="bubble">
+              <div class="bubble_cont">${data.message}</div>
+            </div>
+          </div>
+        </div>
+      </div>`
+      }
+    })
+  },
+  methods: {
+    send() {
+      if (!this.message) return alert("不能发送空白信息")
+      this.$socket.emit("sendMsg", {
+        message: this.message,
+        userName: this.userName,
+        avatar: this.avatar,
+      })
+      this.message = ""
+    },
+  },
 }
 </script>
 <style lang="scss">
@@ -267,7 +313,7 @@ export default {
   top: 14px;
   left: -10px;
   border: 6px solid transparent;
-  content: ' ';
+  content: " ";
   border-right-color: #fff;
   border-right-width: 4px;
 }
@@ -277,7 +323,7 @@ export default {
   top: 14px;
   right: -10px;
   border: 6px solid transparent;
-  content: ' ';
+  content: " ";
   border-left-color: #b2e281;
   border-left-width: 4px;
 }
@@ -285,7 +331,8 @@ export default {
 .bubble_cont {
   word-wrap: break-word;
   word-break: break-all;
-  min-height: 25px;
+  min-height: 20px;
+  line-height: 20px;
   padding: 9px 13px;
 }
 
@@ -308,7 +355,7 @@ export default {
   vertical-align: middle;
   width: 30px;
   height: 30px;
-  background: url('./images/wechat-sprit.png') no-repeat -404px -398px;
+  background: url("./images/wechat-sprit.png") no-repeat -404px -398px;
 }
 
 .box-ft .toolbar .screen-cut {
@@ -316,7 +363,7 @@ export default {
   vertical-align: middle;
   width: 30px;
   height: 30px;
-  background: url('./images/wechat-sprit.png') no-repeat -30px -432px;
+  background: url("./images/wechat-sprit.png") no-repeat -30px -432px;
 }
 
 .box-ft .toolbar .file label {
@@ -333,7 +380,7 @@ export default {
   vertical-align: middle;
   width: 30px;
   height: 30px;
-  background: url('./images/wechat-sprit.png') no-repeat -120px -432px;
+  background: url("./images/wechat-sprit.png") no-repeat -120px -432px;
 }
 
 .box-ft .content {
