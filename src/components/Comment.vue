@@ -22,10 +22,10 @@
       <!-- 聊天主窗口 -->
       <div class="box">
         <!-- 聊天窗口头部 -->
-        <div class="box-hd"><h3>聊天室(<span id="userCount">99</span>)</h3></div>
+        <div class="box-hd"><h3>聊天室(<span id="userCount">{{userlist.length}}</span>)</h3></div>
 
         <!-- 聊天窗口主体区域 -->
-        <div class="box-bd">
+        <div class="box-bd" v-html="comments">
           <!--
           <div class="system">
             <p class="message_system">
@@ -89,7 +89,8 @@ export default {
     return {
         userName:"",
         avatar:"",
-        userlist:[]
+        userlist:[],
+        comments:""
     }
   },
   mounted(){
@@ -101,11 +102,24 @@ export default {
     this.sockets.listener.subscribe("userList", (users) => {
       this.userlist=users
     })
-    
+    this.sockets.listener.subscribe("addUser", (user) => {
+      this.comments+= (`<div class="system">
+           <p class="message_system">
+              <span class="content">${user.userName}加入了群聊</span>
+           </p>
+        </div> `)
+    })
+    this.sockets.listener.subscribe("delUser", (user) => {
+      this.comments+= (`<div class="system">
+           <p class="message_system">
+              <span class="content">${user.userName}离开了群聊</span>
+           </p>
+        </div> `)
+    })
   }
 }
 </script>
-<style lang="scss" scoped>
+<style lang="scss">
 .container {
   max-width: 1000px;
   min-width: 800px;
