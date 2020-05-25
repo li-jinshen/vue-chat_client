@@ -23,7 +23,17 @@ npm run build
 <video id="video" controls="" muted   autoplay="autoplay" preload="none">
     <source id="mp4" src="./效果图/1.mp4" type="video/mp4">
 </video>
+
+
 ![Video_01011](./效果图/Video_01011.gif)
+
+![QQ截图20200525151410](./效果图/QQ截图20200525151410.png)
+
+![QQ截图20200525151359](./效果图/QQ截图20200525151359.png)
+
+![QQ截图20200525151556](./效果图/QQ截图20200525151556.png)
+
+![QQ截图20200525151608](./效果图/QQ截图20200525151608.png)
 
 
 ## 前端技术栈
