@@ -30,7 +30,7 @@
       </div>
 
       <!-- 聊天窗口主体区域 -->
-      <div class="box-bd" v-html="comments">
+      <div class="box-bd" id="box-bd" v-html="comments">
         <!--
           <div class="system">
             <p class="message_system">
@@ -69,7 +69,12 @@
           <a href="javascript:;" title="截屏" class="screen-cut"> </a>
           <a href="javascript:;" title="图片" class="file">
             <label for="file"></label>
-            <input type="file" id="file" style="display: none;" />
+            <input
+              type="file"
+              id="file"
+              @change="selectFile($event)"
+              style="display: none;"
+            />
           </a>
         </div>
         <!-- 内容输入区域 -->
@@ -79,7 +84,6 @@
         </div>
         <!-- 发送按钮 -->
         <div class="action">
-          <span class="desc">按下Ctrl+Enter发送</span>
           <a class="btn-send" id="btn-send" href="javascript:;" @click="send"
             >发送</a
           >
@@ -98,6 +102,9 @@ export default {
       comments: "",
       message: "",
     }
+  },
+  watch: {
+    // comments: "scrollToBottom",
   },
   mounted() {
     // 登陆成功注册的事件
@@ -125,6 +132,8 @@ export default {
            </p>
         </div> `
     })
+
+    // 用户接收信息（分为用户个人信息和其他用户的信息）
     this.sockets.listener.subscribe("sendAll", (data) => {
       if (data.userName === this.userName) {
         this.comments += `<div class="message-box">
@@ -151,6 +160,39 @@ export default {
       </div>`
       }
     })
+
+    // 接收信息（图片）
+    this.sockets.listener.subscribe("sendFileAll", (data) => {
+      if (data.userName === this.userName) {
+        this.comments += `<div class="message-box">
+        <div class="my message">
+          <img class="avatar"  src="${data.avatar}" alt="" />
+          <div class="content">
+            <div class="bubble">
+              <div class="bubble_cont">
+                <img src="${data.imgSrc}">
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>`
+      } else {
+        this.comments += `<div class="message-box">
+        <div class="other message">
+          <img class="avatar"  src="${data.avatar}" alt="" />
+          <div class="content">
+            <div class="nickname">${data.userName}</div>
+            <div class="bubble">
+              <div class="bubble_cont">
+                <img src="${data.imgSrc}">
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>`
+      }
+    })
+    this.scrollToBottom()
   },
   methods: {
     send() {
@@ -162,6 +204,28 @@ export default {
       })
       this.message = ""
     },
+    selectFile(event) {
+      let file = event.target.files[0]
+      var reader = new FileReader()
+      reader.readAsDataURL(file) // 读出 base64
+      reader.onloadend = () => {
+        // 图片的 base64 格式, 可以直接当成 img 的 src 属性值
+        var dataURL = reader.result
+
+        this.$socket.emit("sendFile", {
+          imgSrc: dataURL,
+          userName: this.userName,
+          avatar: this.avatar,
+        })
+      }
+    },
+  },
+  updated() {
+    // 页面更新时让滚动条保持在最底部
+    this.$nextTick(() => {
+      var div = document.getElementById("box-bd")
+      div.scrollTop = div.scrollHeight
+    })
   },
 }
 </script>
@@ -172,6 +236,7 @@ export default {
   height: 100%;
   margin: 0 auto;
   background-color: pink;
+  display: flex;
 }
 
 .user-list {
@@ -183,15 +248,14 @@ export default {
 }
 
 .box {
+  width: calc(100% - 280px);
   overflow: hidden;
   height: 100%;
   background-color: #eee;
-  position: relative;
 }
 
 .box-hd {
   text-align: center;
-  position: absolute;
   top: 0;
   left: 0;
   width: 100%;
@@ -213,7 +277,7 @@ export default {
 }
 
 .box-bd {
-  position: absolute;
+  height: calc(100% - 215px);
   width: 100%;
   bottom: 180px;
   top: 51px;
@@ -331,18 +395,12 @@ export default {
 .bubble_cont {
   word-wrap: break-word;
   word-break: break-all;
-  min-height: 20px;
-  line-height: 20px;
-  padding: 9px 13px;
+  padding: 9px;
 }
 
 .box-ft {
   border-top: 1px solid #ccc;
-  position: absolute;
   height: 180px;
-  bottom: 0;
-  right: 0;
-  left: 0;
 }
 
 .box-ft .toolbar {
