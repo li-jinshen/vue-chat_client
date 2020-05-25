@@ -65,7 +65,12 @@
       <div class="box-ft">
         <!-- 工具栏 -->
         <div class="toolbar">
-          <a href="javascript:;" title="表情" class="face"></a>
+          <a
+            href="javascript:;"
+            title="表情"
+            class="face"
+            @click="showEmoji = !showEmoji"
+          ></a>
           <a href="javascript:;" title="截屏" class="screen-cut"> </a>
           <a href="javascript:;" title="图片" class="file">
             <label for="file"></label>
@@ -77,10 +82,11 @@
             />
           </a>
         </div>
+        <emoji-panel @emojiClick="appendEmoji" v-if="showEmoji"></emoji-panel>
         <!-- 内容输入区域 -->
         <div class="content">
           <!-- div添加一个属性：contenteditable -->
-          <textarea class="text" id="content" v-model="message"></textarea>
+          <div class="text" id="content" contenteditable></div>
         </div>
         <!-- 发送按钮 -->
         <div class="action">
@@ -93,6 +99,7 @@
   </div>
 </template>
 <script>
+import EmojiPanel from "./emoji/EmojiPanel"
 export default {
   data() {
     return {
@@ -101,7 +108,11 @@ export default {
       userlist: [],
       comments: "",
       message: "",
+      showEmoji: false,
     }
+  },
+  components: {
+    EmojiPanel,
   },
   watch: {
     // comments: "scrollToBottom",
@@ -112,6 +123,7 @@ export default {
       this.userName = res.userName
       this.avatar = res.avatar
     })
+    // 接收用户列表
     this.sockets.listener.subscribe("userList", (users) => {
       this.userlist = users
     })
@@ -192,17 +204,27 @@ export default {
       </div>`
       }
     })
-    this.scrollToBottom()
   },
   methods: {
+    appendEmoji(text) {
+      let emoji = this.emoji(text)
+      let dom = document.getElementById("content")
+      dom.innerHTML = dom.innerHTML + emoji
+      this.showEmoji = false
+    },
+    emoji(name) {
+      // 生成html
+      return `<span class="emoji-item-common emoji-${name} emoji-size-small" ></span>`
+    },
     send() {
-      if (!this.message) return alert("不能发送空白信息")
+      let dom = document.getElementById("content")
+      if (!dom.innerHTML) return alert("不能发送空白信息")
       this.$socket.emit("sendMsg", {
-        message: this.message,
+        message: dom.innerHTML,
         userName: this.userName,
         avatar: this.avatar,
       })
-      this.message = ""
+      dom.innerHTML = ""
     },
     selectFile(event) {
       let file = event.target.files[0]
@@ -396,11 +418,16 @@ export default {
   word-wrap: break-word;
   word-break: break-all;
   padding: 9px;
+  vertical-align: middle;
+  span {
+    vertical-align: middle;
+  }
 }
 
 .box-ft {
   border-top: 1px solid #ccc;
   height: 180px;
+  position: relative;
 }
 
 .box-ft .toolbar {
@@ -445,6 +472,10 @@ export default {
   height: 90px;
   overflow-x: hidden;
   padding: 0px 20px;
+  vertical-align: middle;
+  span {
+    vertical-align: middle;
+  }
 }
 
 .box-ft .content .text {
@@ -618,5 +649,53 @@ export default {
   border: none;
   cursor: pointer;
   margin-top: 5px;
+}
+
+// 表情的样式
+.emoji-item-common {
+  background: url("/images/emoji_sprite.png");
+  display: inline-block;
+  margin-top: 2px;
+  &:hover {
+    cursor: pointer;
+  }
+}
+.emoji-size-small {
+  // 表情大小
+  zoom: 0.4;
+  vertical-align: top;
+}
+.emoji-size-large {
+  zoom: 0.5; // emojipanel表情大小
+  margin: 4px;
+}
+.comments-list {
+  margin-top: 20px;
+  .comments-list-item {
+    margin-bottom: 20px;
+    .comments-list-item-heading {
+      display: inline-block;
+      img {
+        height: 32px;
+        width: 32px;
+        border-radius: 50%;
+        vertical-align: middle;
+      }
+      .comments-list-item-username {
+        margin-left: 5px;
+        font-weight: bold;
+      }
+    }
+    .comments-list-item-content {
+      margin: 10px 0px;
+      border-bottom: 1px solid #cccccc;
+      &:last-child {
+        border-bottom: 0;
+      }
+      span {
+        vertical-align: top;
+      }
+    }
+  }
 }
 </style>
