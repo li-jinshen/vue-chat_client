@@ -23,7 +23,7 @@ npm run build
 <video id="video" controls="" muted   autoplay="autoplay" preload="none">
     <source id="mp4" src="./效果图/1.mp4" type="video/mp4">
 </video>
-
+![Video_01011](./效果图/Video_01011.gif)
 
 
 ## 前端技术栈
